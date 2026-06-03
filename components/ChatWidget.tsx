@@ -85,7 +85,7 @@ export default function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close chat assistant" : "Open chat assistant"}
         aria-expanded={open}
-        className="fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-lime text-navy shadow-xl shadow-navy/20 transition-transform hover:scale-105 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime/40 sm:bottom-6 sm:right-6"
+        className="fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-lime text-navy shadow-lime transition-transform hover:scale-105 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime/40 sm:bottom-6 sm:right-6"
       >
         {!open && (
           <span

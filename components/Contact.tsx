@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CheckCircle2, Send, Loader2 } from "lucide-react";
+import { CheckCircle2, ArrowRight, Loader2, Phone } from "lucide-react";
 
 const JOB_TYPES = [
   "Plumbing",
@@ -10,6 +10,11 @@ const JOB_TYPES = [
   "Emergency call-out",
   "Not sure / other",
 ];
+
+const inputClass =
+  "mt-2 w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-base text-ink shadow-sm outline-none transition focus:border-navy focus:ring-4 focus:ring-lime/25";
+const labelClass =
+  "block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500";
 
 export default function Contact() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -22,23 +27,31 @@ export default function Contact() {
   }
 
   return (
-    <section id="contact" className="bg-white py-20 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-start gap-12 lg:grid-cols-2">
-          {/* Left: pitch */}
+    <section id="contact" className="bg-white py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-20">
+          {/* Left — pitch */}
           <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-lime-dark">
-              Get in touch
-            </p>
-            <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-navy sm:text-4xl">
-              Get your free, no-obligation quote
+            <div className="flex items-center gap-3">
+              <span className="font-display text-sm font-semibold tabular-nums text-lime-dark">
+                04
+              </span>
+              <span className="h-px w-8 bg-ink/20" aria-hidden="true" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Get in touch
+              </span>
+            </div>
+            <h2 className="mt-5 font-display text-[2rem] font-bold leading-[1.08] tracking-tightest text-ink sm:text-4xl lg:text-[2.75rem]">
+              Get your free,
+              <br /> no-obligation quote
             </h2>
-            <p className="mt-4 text-lg text-slate-600">
+            <p className="mt-4 max-w-md text-lg leading-relaxed text-slate-600">
               Tell us about the job and we&apos;ll be in touch within the hour
               during working hours. No call centres — you&apos;ll speak to the
               team doing the work.
             </p>
-            <ul className="mt-8 space-y-3 text-slate-700">
+
+            <ul className="mt-8 space-y-3.5 text-slate-700">
               {[
                 "Free same-day quotes",
                 "Fixed prices — no surprises",
@@ -53,20 +66,37 @@ export default function Contact() {
                 </li>
               ))}
             </ul>
+
+            <a
+              href="tel:+447700900123"
+              className="mt-10 inline-flex items-center gap-3 rounded-xl border border-ink/10 bg-paper px-5 py-4 transition-colors hover:border-lime/50"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-navy text-lime">
+                <Phone className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="leading-tight">
+                <span className="block text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Prefer to call?
+                </span>
+                <span className="font-display text-lg font-bold text-ink">
+                  07700 900123
+                </span>
+              </span>
+            </a>
           </div>
 
-          {/* Right: form / confirmation */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:p-8">
+          {/* Right — form / confirmation */}
+          <div className="rounded-3xl border border-ink/10 bg-paper p-6 shadow-card sm:p-8">
             {status === "sent" ? (
               <div
-                className="flex flex-col items-center justify-center py-10 text-center"
+                className="flex flex-col items-center justify-center py-12 text-center"
                 role="status"
                 aria-live="polite"
               >
                 <span className="grid h-16 w-16 place-items-center rounded-full bg-lime/20 text-lime-dark">
                   <CheckCircle2 className="h-9 w-9" aria-hidden="true" />
                 </span>
-                <h3 className="mt-5 font-display text-2xl font-bold text-navy">
+                <h3 className="mt-5 font-display text-2xl font-bold tracking-tight text-ink">
                   Thanks, we&apos;ll be in touch within the hour
                 </h3>
                 <p className="mt-2 text-slate-600">
@@ -75,7 +105,7 @@ export default function Contact() {
                 <button
                   type="button"
                   onClick={() => setStatus("idle")}
-                  className="mt-6 text-sm font-bold text-navy underline-offset-4 hover:underline"
+                  className="mt-6 text-sm font-bold text-ink underline-offset-4 hover:underline"
                 >
                   Send another enquiry
                 </button>
@@ -83,10 +113,7 @@ export default function Contact() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                 <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-semibold text-navy"
-                  >
+                  <label htmlFor="name" className={labelClass}>
                     Name
                   </label>
                   <input
@@ -95,16 +122,13 @@ export default function Contact() {
                     type="text"
                     required
                     autoComplete="name"
-                    className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-navy shadow-sm outline-none transition focus:border-navy focus:ring-2 focus:ring-lime/40"
+                    className={inputClass}
                     placeholder="Jane Smith"
                   />
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-semibold text-navy"
-                  >
+                  <label htmlFor="phone" className={labelClass}>
                     Phone
                   </label>
                   <input
@@ -113,16 +137,13 @@ export default function Contact() {
                     type="tel"
                     required
                     autoComplete="tel"
-                    className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-navy shadow-sm outline-none transition focus:border-navy focus:ring-2 focus:ring-lime/40"
+                    className={inputClass}
                     placeholder="07700 900123"
                   />
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="jobType"
-                    className="block text-sm font-semibold text-navy"
-                  >
+                  <label htmlFor="jobType" className={labelClass}>
                     Job Type
                   </label>
                   <select
@@ -130,7 +151,7 @@ export default function Contact() {
                     name="jobType"
                     required
                     defaultValue=""
-                    className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-navy shadow-sm outline-none transition focus:border-navy focus:ring-2 focus:ring-lime/40"
+                    className={inputClass}
                   >
                     <option value="" disabled>
                       Select a job type…
@@ -144,17 +165,14 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="message"
-                    className="block text-sm font-semibold text-navy"
-                  >
+                  <label htmlFor="message" className={labelClass}>
                     Message
                   </label>
                   <textarea
                     id="message"
                     name="message"
                     rows={4}
-                    className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-navy shadow-sm outline-none transition focus:border-navy focus:ring-2 focus:ring-lime/40"
+                    className={`${inputClass} resize-y`}
                     placeholder="Tell us a bit about the job…"
                   />
                 </div>
@@ -162,7 +180,7 @@ export default function Contact() {
                 <button
                   type="submit"
                   disabled={status === "sending"}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-lime px-5 py-3 text-base font-bold text-navy transition-colors hover:bg-lime-glow disabled:cursor-not-allowed disabled:opacity-70"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-lime px-5 py-3.5 text-base font-bold text-navy transition-colors hover:bg-lime-glow disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {status === "sending" ? (
                     <>
@@ -171,8 +189,11 @@ export default function Contact() {
                     </>
                   ) : (
                     <>
-                      <Send className="h-5 w-5" aria-hidden="true" />
                       Submit Enquiry
+                      <ArrowRight
+                        className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                        aria-hidden="true"
+                      />
                     </>
                   )}
                 </button>
