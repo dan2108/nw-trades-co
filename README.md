@@ -48,11 +48,14 @@ and [`components/ChatWidget.tsx`](components/ChatWidget.tsx).
 
 ## Deploy to Vercel
 
-### Option A — Vercel dashboard (no CLI)
-1. Push this folder to a GitHub repo.
-2. On https://vercel.com → **Add New… → Project** → import the repo.
-3. Add env var `ANTHROPIC_API_KEY` in the project settings.
-4. Deploy. Vercel auto-detects Next.js.
+### Option A — Vercel dashboard (this repo)
+1. Repo is already on GitHub: **https://github.com/dan2108/nw-trades-co** (private).
+2. On https://vercel.com → **Add New… → Project** → **Import** `dan2108/nw-trades-co`
+   (authorise Vercel for GitHub if prompted). Framework auto-detects as **Next.js** — leave defaults.
+3. Expand **Environment Variables** and add:
+   - `ANTHROPIC_API_KEY` = your key (required for the chatbot to reply)
+   - `NEXT_PUBLIC_WHATSAPP_NUMBER` = real WhatsApp number, intl digits (optional; defaults to test number)
+4. **Deploy.** You'll get a live `*.vercel.app` URL in ~1 minute.
 
 ### Option B — Vercel CLI (headless)
 ```bash
