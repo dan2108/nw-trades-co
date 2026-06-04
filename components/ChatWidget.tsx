@@ -1,25 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useChat } from "ai/react";
 import { MessageCircle, X, Send, Wrench } from "lucide-react";
-
-const GREETING =
-  "Hi! I'm the NW Trades Co assistant — what job can I help you with today?";
+import {
+  respond,
+  INITIAL_STATE,
+  GREETING,
+  type BotState,
+} from "@/lib/demoBot";
 
 const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "447700900123";
 
 /** Build a wa.me deep link with a pre-filled message. */
-function whatsappLink(jobSummary?: string, name?: string) {
-  const intro = name ? `Hi NW Trades Co, it's ${name}. ` : "Hi NW Trades Co, ";
+function whatsappLink(jobSummary?: string) {
   const body = jobSummary
-    ? `${intro}I'd like a free quote.\n\nJob: ${jobSummary}`
-    : `${intro}I'd like a free quote please.`;
+    ? `Hi NW Trades Co, I'd like a free quote.\n\nJob: ${jobSummary}`
+    : `Hi NW Trades Co, I'd like a free quote please.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(body)}`;
 }
 
-/** WhatsApp glyph (Simple Icons path) — kept inline to avoid an extra dep. */
+/** WhatsApp glyph (Simple Icons path). */
 function WhatsAppIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
@@ -28,54 +29,80 @@ function WhatsAppIcon({ className = "" }: { className?: string }) {
   );
 }
 
-type ChatMsg = ReturnType<typeof useChat>["messages"][number];
-
-/** Pull the most recent handoffToWhatsApp tool call out of the message list. */
-function findHandoff(messages: ChatMsg[]) {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const invocations = messages[i].toolInvocations;
-    if (!invocations) continue;
-    for (const inv of invocations) {
-      if (inv.toolName === "handoffToWhatsApp") {
-        const args = (inv.args ?? {}) as {
-          jobSummary?: string;
-          customerName?: string;
-        };
-        return { jobSummary: args.jobSummary, name: args.customerName };
-      }
-    }
-  }
-  return null;
+/** Render **bold** markers and preserve line breaks. */
+function RichText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.startsWith("**") && p.endsWith("**") ? (
+          <strong key={i} className="font-semibold text-ink">
+            {p.slice(2, -2)}
+          </strong>
+        ) : (
+          <span key={i}>{p}</span>
+        )
+      )}
+    </>
+  );
 }
+
+type Msg = { id: number; role: "user" | "assistant"; content: string };
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<Msg[]>([
+    { id: 0, role: "assistant", content: GREETING },
+  ]);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+  const [handoff, setHandoff] = useState<string | null>(null);
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-  } = useChat({
-    api: "/api/chat",
-    initialMessages: [{ id: "greeting", role: "assistant", content: GREETING }],
-  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const idRef = useRef(1);
+  const botState = useRef<BotState>(INITIAL_STATE);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isLoading, open]);
+  }, [messages, typing, open, handoff]);
 
-  const visibleMessages = messages.filter(
-    (m) => m.content && m.content.trim().length > 0
-  );
-  const handoff = findHandoff(messages);
-  // Show a WhatsApp CTA when the bot hands off, OR as a fallback if chat errors.
-  const showWhatsApp = Boolean(handoff) || Boolean(error);
+  // Clear any pending timers on unmount.
+  useEffect(() => {
+    const pending = timers.current;
+    return () => pending.forEach(clearTimeout);
+  }, []);
+
+  function send(raw: string) {
+    const text = raw.trim();
+    if (!text || typing) return;
+
+    setMessages((m) => [
+      ...m,
+      { id: idRef.current++, role: "user", content: text },
+    ]);
+    setInput("");
+    setTyping(true);
+
+    const turn = respond(text, botState.current);
+    botState.current = turn.nextState;
+
+    // Simulate a natural typing pause, scaled to reply length.
+    const delay = Math.min(1500, Math.max(600, turn.reply.length * 14));
+    const t = setTimeout(() => {
+      setTyping(false);
+      setMessages((m) => [
+        ...m,
+        { id: idRef.current++, role: "assistant", content: turn.reply },
+      ]);
+      if (turn.offerWhatsApp) setHandoff(turn.jobSummary ?? "");
+    }, delay);
+    timers.current.push(t);
+  }
+
+  const quickReplies = ["Boiler repair", "Full rewire", "New bathroom", "Do you cover my area?"];
 
   return (
     <>
@@ -105,7 +132,7 @@ export default function ChatWidget() {
         <div
           role="dialog"
           aria-label="NW Trades Co enquiry assistant"
-          className="fixed inset-x-3 bottom-24 z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl motion-safe:animate-chat-pop sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[24rem]"
+          className="fixed inset-x-3 bottom-24 z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-2xl motion-safe:animate-chat-pop sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[24rem]"
         >
           {/* Header */}
           <div className="flex items-center gap-3 bg-navy px-4 py-3 text-white">
@@ -132,9 +159,9 @@ export default function ChatWidget() {
           {/* Messages */}
           <div
             ref={scrollRef}
-            className="chat-scroll flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4"
+            className="chat-scroll flex-1 space-y-3 overflow-y-auto bg-paper p-4"
           >
-            {visibleMessages.map((m) => (
+            {messages.map((m) => (
               <div
                 key={m.id}
                 className={`flex ${
@@ -142,45 +169,57 @@ export default function ChatWidget() {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                  className={`max-w-[82%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
                     m.role === "user"
                       ? "rounded-br-sm bg-navy text-white"
-                      : "rounded-bl-sm border border-slate-200 bg-white text-slate-800"
+                      : "rounded-bl-sm border border-ink/10 bg-white text-slate-700"
                   }`}
                 >
-                  {m.content}
+                  {m.role === "assistant" ? (
+                    <RichText text={m.content} />
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             ))}
 
-            {isLoading &&
-              visibleMessages[visibleMessages.length - 1]?.role === "user" && (
-                <div className="flex justify-start">
-                  <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-4 py-3">
-                    {[0, 150, 300].map((d) => (
-                      <span
-                        key={d}
-                        className="h-2 w-2 animate-bounce rounded-full bg-slate-400"
-                        style={{ animationDelay: `${d}ms` }}
-                      />
-                    ))}
-                  </div>
+            {typing && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-ink/10 bg-white px-4 py-3">
+                  {[0, 150, 300].map((d) => (
+                    <span
+                      key={d}
+                      className="h-2 w-2 animate-bounce rounded-full bg-slate-400"
+                      style={{ animationDelay: `${d}ms` }}
+                    />
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
-            {error && (
-              <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                The assistant is having a moment — no problem, message us
-                directly on WhatsApp below and we&apos;ll sort your quote.
-              </p>
+            {/* Quick-reply chips (only before the first user message) */}
+            {messages.length === 1 && !typing && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {quickReplies.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => send(q)}
+                    className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-lime hover:bg-lime/10"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
           {/* WhatsApp handoff CTA */}
-          {showWhatsApp && (
-            <div className="border-t border-slate-200 bg-white px-3 pt-3">
+          {handoff !== null && (
+            <div className="border-t border-ink/10 bg-white px-3 pt-3">
               <a
-                href={whatsappLink(handoff?.jobSummary, handoff?.name)}
+                href={whatsappLink(handoff || undefined)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#1ebe5b]"
@@ -193,8 +232,11 @@ export default function ChatWidget() {
 
           {/* Input */}
           <form
-            onSubmit={handleSubmit}
-            className="flex items-center gap-2 border-t border-slate-200 bg-white p-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(input);
+            }}
+            className="flex items-center gap-2 border-t border-ink/10 bg-white p-3"
           >
             <label htmlFor="chat-input" className="sr-only">
               Type your message
@@ -202,14 +244,14 @@ export default function ChatWidget() {
             <input
               id="chat-input"
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message…"
               autoComplete="off"
-              className="min-w-0 flex-1 rounded-full border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-navy outline-none transition focus:border-navy focus:ring-2 focus:ring-lime/40"
+              className="min-w-0 flex-1 rounded-full border border-ink/15 bg-paper px-4 py-2.5 text-sm text-ink outline-none transition focus:border-navy focus:ring-2 focus:ring-lime/40"
             />
             <button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={typing || !input.trim()}
               aria-label="Send message"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-lime text-navy transition-colors hover:bg-lime-glow disabled:cursor-not-allowed disabled:opacity-50"
             >
