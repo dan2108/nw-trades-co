@@ -1,0 +1,12 @@
+# Netlify configuration for the NW Trades Co Next.js app.
+# The official Next.js Runtime handles SSR + the /api/chat function (incl. streaming).
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Auto-installed by Netlify when Next.js is detected, but pinned here for reliability.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
