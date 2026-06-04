@@ -65,6 +65,25 @@ vercel env add ANTHROPIC_API_KEY production
 vercel --prod
 ```
 
+### Option C — Netlify dashboard (this repo)
+A [`netlify.toml`](netlify.toml) is included (Next.js Runtime + Node 20), so the import auto-configures.
+1. https://app.netlify.com → **Add new site → Import an existing project → GitHub**
+   (authorise Netlify for the private repo if prompted) → pick `dan2108/nw-trades-co`.
+2. Build settings auto-detect — leave them (command `npm run build`, plugin `@netlify/plugin-nextjs`).
+3. **Site configuration → Environment variables**, add:
+   - `ANTHROPIC_API_KEY` = your key (required for the chatbot to reply)
+   - `NEXT_PUBLIC_WHATSAPP_NUMBER` = real WhatsApp number, intl digits (optional)
+4. **Deploy site** → live `*.netlify.app` URL in ~1–2 minutes. Re-deploys on every `git push`.
+
+### Option D — Netlify CLI (headless)
+```bash
+npm i -g netlify-cli
+netlify login                  # or export NETLIFY_AUTH_TOKEN=<token>
+netlify init                   # link to the GitHub repo / create the site
+netlify env:set ANTHROPIC_API_KEY <your-key>
+netlify deploy --build --prod
+```
+
 ---
 
 ## Project structure
